@@ -91,83 +91,121 @@ function shortDate(isoDate?: string): string {
 function ChatSidebar({
   chats,
   activeId,
+  open,
+  onClose,
   onSelect,
   onDelete,
   onNewChat,
 }: {
   chats: SavedChat[];
   activeId: string | null;
+  open: boolean;
+  onClose: () => void;
   onSelect: (chat: SavedChat) => void;
   onDelete: (id: string) => void;
   onNewChat: () => void;
 }) {
-  return (
-    <aside className="w-80 min-w-[260px] flex flex-col bg-[#111b21] border-r border-[#2a3942] h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#1f2c34]">
-        <span className="text-white font-semibold text-base">Chats</span>
-        <button
-          onClick={onNewChat}
-          title="Import new chat"
-          className="text-[#00a884] hover:text-[#02b698] transition-colors"
-        >
-          {/* compose / new icon */}
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-        </button>
-      </div>
+  const handleSelect = (chat: SavedChat) => {
+    onSelect(chat);
+    onClose(); // auto-close on mobile after selecting
+  };
 
-      {/* Chat list */}
-      <div className="flex-1 overflow-y-auto">
-        {chats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-2 px-6 text-center">
-            <svg className="w-10 h-10 text-[#2a3942]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <p className="text-[#8696a0] text-xs">No saved chats yet.<br />Import a chat to get started.</p>
-          </div>
-        ) : (
-          chats.map((chat) => (
-            <div
-              key={chat.id}
-              onClick={() => onSelect(chat)}
-              className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-[#1f2c34] transition-colors group ${
-                activeId === chat.id ? "bg-[#2a3942]" : "hover:bg-[#1f2c34]"
-              }`}
+  return (
+    <>
+      {/* Mobile backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside
+        className={`
+          fixed top-0 left-0 h-full z-30 flex flex-col bg-[#111b21] border-r border-[#2a3942]
+          w-4/5 max-w-xs
+          transition-transform duration-300 ease-in-out
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:relative md:translate-x-0 md:w-80 md:min-w-[260px] md:z-auto md:h-screen
+        `}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-[#1f2c34]">
+          <span className="text-white font-semibold text-base">Chats</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onNewChat}
+              title="Import new chat"
+              className="text-[#00a884] hover:text-[#02b698] transition-colors"
             >
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-[#00a884] flex items-center justify-center shrink-0 text-white font-semibold text-sm uppercase">
-                {chat.name.charAt(0)}
-              </div>
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-white text-sm font-medium truncate">{chat.name}</span>
-                  <span className="text-[#8696a0] text-[11px] ml-2 shrink-0">{shortDate(chat.lastDate)}</span>
-                </div>
-                <p className="text-[#8696a0] text-xs truncate mt-0.5">
-                  {chat.lastMessage ?? `${chat.messages.length} messages`}
-                </p>
-              </div>
-              {/* Delete button */}
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete(chat.id); }}
-                title="Delete chat"
-                className="text-[#8696a0] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+            {/* Close button — mobile only */}
+            <button
+              onClick={onClose}
+              className="text-[#8696a0] hover:text-white transition-colors md:hidden"
+              title="Close"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Chat list */}
+        <div className="flex-1 overflow-y-auto">
+          {chats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2 px-6 text-center">
+              <svg className="w-10 h-10 text-[#2a3942]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <p className="text-[#8696a0] text-xs">No saved chats yet.<br />Import a chat to get started.</p>
             </div>
-          ))
-        )}
-      </div>
-    </aside>
+          ) : (
+            chats.map((chat) => (
+              <div
+                key={chat.id}
+                onClick={() => handleSelect(chat)}
+                className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-[#1f2c34] transition-colors group ${
+                  activeId === chat.id ? "bg-[#2a3942]" : "hover:bg-[#1f2c34]"
+                }`}
+              >
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-full bg-[#00a884] flex items-center justify-center shrink-0 text-white font-semibold text-sm uppercase">
+                  {chat.name.charAt(0)}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-sm font-medium truncate">{chat.name}</span>
+                    <span className="text-[#8696a0] text-[11px] ml-2 shrink-0">{shortDate(chat.lastDate)}</span>
+                  </div>
+                  <p className="text-[#8696a0] text-xs truncate mt-0.5">
+                    {chat.lastMessage ?? `${chat.messages.length} messages`}
+                  </p>
+                </div>
+                {/* Delete button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(chat.id); }}
+                  title="Delete chat"
+                  className="text-[#8696a0] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 md:opacity-0 shrink-0"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -178,6 +216,7 @@ function ChatSidebar({
 export default function Home() {
   const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
   const [activeChat, setActiveChat] = useState<SavedChat | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Import state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -288,12 +327,14 @@ export default function Home() {
     setActiveChat(chat);
     setShowImporter(false);
     resetImport();
+    setSidebarOpen(false);
   };
 
   const handleNewChat = () => {
     setActiveChat(null);
     setShowImporter(true);
     resetImport();
+    setSidebarOpen(false);
   };
 
   // The currently displayed messages/participants come either from an active
@@ -322,11 +363,13 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-[#111b21] overflow-hidden">
-      {/* Sidebar — always visible once there are saved chats, or when importing */}
+      {/* Sidebar */}
       {(hasSavedChats || showImporter) && (
         <ChatSidebar
           chats={savedChats}
           activeId={activeChat?.id ?? null}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
           onSelect={handleSelectChat}
           onDelete={handleDeleteChat}
           onNewChat={handleNewChat}
@@ -358,7 +401,20 @@ export default function Home() {
         {/* Importer */}
         {isImporting && messages.length === 0 && (
           <div className="w-full max-w-md flex flex-col gap-4">
-            <h1 className="text-white text-xl font-semibold text-center">Import Chat</h1>
+            <div className="flex items-center gap-3">
+              {hasSavedChats && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="text-[#8696a0] hover:text-white transition-colors md:hidden shrink-0"
+                  title="Open chats"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              )}
+              <h1 className="text-white text-xl font-semibold">Import Chat</h1>
+            </div>
 
             {/* Tab switcher */}
             <div className="flex bg-[#1f2c34] rounded-xl p-1 gap-1">
@@ -426,23 +482,35 @@ export default function Home() {
           <div className="w-full max-w-xl flex flex-col gap-4">
             {/* Save banner */}
             <div className="flex flex-col gap-3 bg-[#1f2c34] rounded-xl px-4 py-3">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center gap-3">
+                {/* Hamburger — mobile only */}
+                {hasSavedChats && (
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="text-[#8696a0] hover:text-white transition-colors md:hidden shrink-0"
+                    title="Open chats"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                )}
+                <div className="flex-1 flex items-center justify-between">
                   <p className="text-[#8696a0] text-xs">{messages.length} messages · {participants.length} participant{participants.length !== 1 ? "s" : ""}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={resetImport}
-                    className="text-[#8696a0] hover:text-white transition-colors text-xs underline"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    onClick={handleSaveChat}
-                    className="px-3 py-1.5 bg-[#00a884] hover:bg-[#02b698] text-white text-xs font-medium rounded-lg transition-colors"
-                  >
-                    Save Chat
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={resetImport}
+                      className="text-[#8696a0] hover:text-white transition-colors text-xs underline"
+                    >
+                      Discard
+                    </button>
+                    <button
+                      onClick={handleSaveChat}
+                      className="px-3 py-1.5 bg-[#00a884] hover:bg-[#02b698] text-white text-xs font-medium rounded-lg transition-colors"
+                    >
+                      Save Chat
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -479,24 +547,38 @@ export default function Home() {
         {isViewing && (
           <div className="w-full max-w-xl flex flex-col gap-4">
             {/* Top bar */}
-            <div className="flex items-center justify-between bg-[#1f2c34] rounded-xl px-4 py-3">
-              <div className="flex flex-col">
-                <span className="text-white text-sm font-medium truncate max-w-[200px]">{viewFileName}</span>
-                <span className="text-[#8696a0] text-xs">
-                  {viewMessages.length} messages · {viewParticipants.length} participants
-                </span>
-              </div>
-              <div className="flex flex-col items-end">
-                <label className="text-[#8696a0] text-xs mb-1">Your perspective</label>
-                <select
-                  className="bg-[#2a3942] text-white text-sm rounded-lg px-2 py-1 border border-[#3b4a54] outline-none"
-                  value={viewPerspective}
-                  onChange={(e) => setPerspectiveForActive(e.target.value)}
+            <div className="flex items-center gap-3 bg-[#1f2c34] rounded-xl px-4 py-3">
+              {/* Hamburger — mobile only */}
+              {hasSavedChats && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="text-[#8696a0] hover:text-white transition-colors md:hidden shrink-0"
+                  title="Open chats"
                 >
-                  {viewParticipants.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              )}
+              <div className="flex-1 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-white text-sm font-medium truncate max-w-[160px]">{viewFileName}</span>
+                  <span className="text-[#8696a0] text-xs">
+                    {viewMessages.length} messages · {viewParticipants.length} participants
+                  </span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <label className="text-[#8696a0] text-xs mb-1">Your perspective</label>
+                  <select
+                    className="bg-[#2a3942] text-white text-sm rounded-lg px-2 py-1 border border-[#3b4a54] outline-none"
+                    value={viewPerspective}
+                    onChange={(e) => setPerspectiveForActive(e.target.value)}
+                  >
+                    {viewParticipants.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 

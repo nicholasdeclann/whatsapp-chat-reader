@@ -14,6 +14,7 @@ export interface SavedChat {
 const STORAGE_KEY = "wacr_saved_chats";
 
 export function loadSavedChats(): SavedChat[] {
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -24,6 +25,7 @@ export function loadSavedChats(): SavedChat[] {
 }
 
 export function saveChat(chat: SavedChat): void {
+  if (typeof window === "undefined") return;
   const chats = loadSavedChats();
   const idx = chats.findIndex((c) => c.id === chat.id);
   if (idx !== -1) {
@@ -35,6 +37,7 @@ export function saveChat(chat: SavedChat): void {
 }
 
 export function deleteChat(id: string): void {
+  if (typeof window === "undefined") return;
   const chats = loadSavedChats().filter((c) => c.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
 }
