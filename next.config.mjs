@@ -1,8 +1,10 @@
 
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig = {
   output: "export",
-  basePath: "/whatsapp-chat-reader",
+  basePath: isProd ? "/whatsapp-chat-reader" : "",
   images: {
     unoptimized: true,
   },

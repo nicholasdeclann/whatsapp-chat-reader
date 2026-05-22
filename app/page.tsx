@@ -5,6 +5,68 @@ import { parseWhatsAppChat, ChatMessage } from "./lib/parseChat";
 
 type InputMode = "upload" | "paste";
 
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
+function renderTextWithLinks(text: string, participants: string[]) {
+  // Build a regex that matches @Name only for known participants, longest first
+  const escapedNames = participants
+    .slice()
+    .sort((a, b) => b.length - a.length)
+    .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const mentionPattern = escapedNames.length
+    ? `(@(?:${escapedNames.join("|")}))`
+    : null;
+  const splitPattern = mentionPattern
+    ? new RegExp(`(https?:\\/\\/[^\\s]+|@(?:${escapedNames.join("|")}))`, "g")
+    : /(https?:\/\/[^\s]+)/g;
+
+  const parts = text.split(splitPattern).filter(Boolean);
+  return parts.map((part, i) => {
+    if (/^https?:\/\//.test(part)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-[#53bdeb] break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+    if (/^@/.test(part)) {
+      return (
+        <span key={i} className="text-[#53bdeb]">
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
+function formatDateLabel(isoDate: string): string {
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+
+  if (isoDate === todayStr) return "Today";
+  if (isoDate === yesterdayStr) return "Yesterday";
+
+  // Format as "Monday, 11 May 2026"
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [participants, setParticipants] = useState<string[]>([]);
@@ -206,45 +268,60 @@ export default function Home() {
 
           {/* Chat window */}
           <div className="bg-[#0b141a] rounded-2xl flex flex-col gap-1 p-4 overflow-y-auto max-h-[70vh]">
-            {messages.map((msg) => {
-              const isMe = msg.sender === perspective;
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                >
+            {(() => {
+              const items: React.ReactNode[] = [];
+              let lastDate = "";
+              for (const msg of messages) {
+                if (msg.date !== lastDate) {
+                  lastDate = msg.date;
+                  items.push(
+                    <div key={`sep-${msg.date}`} className="flex justify-center my-2">
+                      <span className="bg-[#1f2c34] text-[#8696a0] text-xs px-3 py-1 rounded-full shadow">
+                        {formatDateLabel(msg.date)}
+                      </span>
+                    </div>
+                  );
+                }
+                const isMe = msg.sender === perspective;
+                items.push(
                   <div
-                    className={`relative max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-md ${
-                      isMe
-                        ? "bg-[#005c4b] text-white rounded-br-sm"
-                        : "bg-[#1f2c34] text-white rounded-bl-sm"
-                    }`}
+                    key={msg.id}
+                    className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                   >
-                    {!isMe && (
-                      <p className="text-[#00a884] font-semibold text-xs mb-1">
-                        {msg.sender}
-                      </p>
-                    )}
-                    {msg.replyTo && (
-                      <div className={`mb-2 px-2 py-1.5 rounded-lg border-l-4 text-xs ${
+                    <div
+                      className={`relative max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-md ${
                         isMe
-                          ? "bg-[#004036] border-[#00a884]"
-                          : "bg-[#16232b] border-[#00a884]"
-                      }`}>
-                        <p className="text-[#00a884] font-semibold mb-0.5">{msg.replyTo.sender}</p>
-                        <p className="text-[#8696a0] line-clamp-2 whitespace-pre-wrap">{msg.replyTo.text}</p>
-                      </div>
-                    )}
-                    <p className="whitespace-pre-wrap leading-relaxed">
-                      {msg.text}
-                    </p>
-                    <p className="text-[#8696a0] text-[10px] text-right mt-1 -mb-0.5">
-                      {msg.timestamp}
-                    </p>
+                          ? "bg-[#005c4b] text-white rounded-br-sm"
+                          : "bg-[#1f2c34] text-white rounded-bl-sm"
+                      }`}
+                    >
+                      {!isMe && (
+                        <p className="text-[#00a884] font-semibold text-xs mb-1">
+                          {msg.sender}
+                        </p>
+                      )}
+                      {msg.replyTo && (
+                        <div className={`mb-2 px-2 py-1.5 rounded-lg border-l-4 text-xs ${
+                          isMe
+                            ? "bg-[#004036] border-[#00a884]"
+                            : "bg-[#16232b] border-[#00a884]"
+                        }`}>
+                          <p className="text-[#00a884] font-semibold mb-0.5">{msg.replyTo.sender}</p>
+                          <p className="text-[#8696a0] line-clamp-2 whitespace-pre-wrap">{msg.replyTo.text}</p>
+                        </div>
+                      )}
+                      <p className="whitespace-pre-wrap leading-relaxed">
+                        {renderTextWithLinks(msg.text, participants)}
+                      </p>
+                      <p className="text-[#8696a0] text-[10px] text-right mt-1 -mb-0.5">
+                        {msg.timestamp}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              }
+              return items;
+            })()}
           </div>
         </div>
       )}
