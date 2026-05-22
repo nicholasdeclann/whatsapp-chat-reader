@@ -1,8 +1,14 @@
+export interface ReplyTo {
+  sender: string;
+  text: string;
+}
+
 export interface ChatMessage {
   id: number;
   timestamp: string;
   sender: string;
   text: string;
+  replyTo?: ReplyTo;
 }
 
 // Matches web format:    [00:46, 5/22/2026] Name: message
@@ -49,6 +55,25 @@ export function parseWhatsAppChat(raw: string): { messages: ChatMessage[]; parti
   // Trim trailing whitespace from each message
   for (const msg of messages) {
     msg.text = msg.text.trim();
+  }
+
+  // Detect replies: if the first line of a message matches a previous message's text,
+  // treat it as a quoted reply.
+  const textToMessage = new Map<string, ChatMessage>();
+  for (const msg of messages) {
+    textToMessage.set(msg.text, msg);
+  }
+
+  for (const msg of messages) {
+    const newlineIndex = msg.text.indexOf("\n");
+    const firstLine = newlineIndex !== -1 ? msg.text.slice(0, newlineIndex).trim() : null;
+    if (firstLine) {
+      const quoted = textToMessage.get(firstLine);
+      if (quoted && quoted.id !== msg.id) {
+        msg.replyTo = { sender: quoted.sender, text: quoted.text };
+        msg.text = msg.text.slice(newlineIndex + 1).trim();
+      }
+    }
   }
 
   const participants = [...new Set(messages.map((m) => m.sender))];

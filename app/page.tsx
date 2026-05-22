@@ -225,6 +225,16 @@ export default function Home() {
                         {msg.sender}
                       </p>
                     )}
+                    {msg.replyTo && (
+                      <div className={`mb-2 px-2 py-1.5 rounded-lg border-l-4 text-xs ${
+                        isMe
+                          ? "bg-[#004036] border-[#00a884]"
+                          : "bg-[#16232b] border-[#00a884]"
+                      }`}>
+                        <p className="text-[#00a884] font-semibold mb-0.5">{msg.replyTo.sender}</p>
+                        <p className="text-[#8696a0] line-clamp-2 whitespace-pre-wrap">{msg.replyTo.text}</p>
+                      </div>
+                    )}
                     <p className="whitespace-pre-wrap leading-relaxed">
                       {msg.text}
                     </p>
