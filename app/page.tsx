@@ -16,6 +16,49 @@ type InputMode = "upload" | "paste";
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Parse WhatsApp formatting: *bold*, _italic_, ~strikethrough~, `monospace` */
+function renderFormattedSegment(text: string, key: string): React.ReactNode {
+  // Process formatting markers in order. We use a regex that captures the
+  // outermost formatting token and recurse for nested formatting.
+  const FORMATTING_RE = /(\*(.+?)\*|_(.+?)_|~(.+?)~|`(.+?)`)/ ;
+
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let idx = 0;
+
+  while (remaining) {
+    const match = remaining.match(FORMATTING_RE);
+    if (!match || match.index === undefined) {
+      parts.push(remaining);
+      break;
+    }
+
+    // Text before the match
+    if (match.index > 0) {
+      parts.push(remaining.slice(0, match.index));
+    }
+
+    const k = `${key}-${idx++}`;
+    if (match[2] !== undefined) {
+      // *bold*
+      parts.push(<strong key={k} className="font-bold">{renderFormattedSegment(match[2], k)}</strong>);
+    } else if (match[3] !== undefined) {
+      // _italic_
+      parts.push(<em key={k} className="italic">{renderFormattedSegment(match[3], k)}</em>);
+    } else if (match[4] !== undefined) {
+      // ~strikethrough~
+      parts.push(<del key={k} className="line-through">{renderFormattedSegment(match[4], k)}</del>);
+    } else if (match[5] !== undefined) {
+      // `monospace`
+      parts.push(<code key={k} className="bg-[#1a2b33] px-1 rounded text-[#e9e9e9] text-[13px] font-mono">{match[5]}</code>);
+    }
+
+    remaining = remaining.slice(match.index + match[0].length);
+  }
+
+  return parts.length === 1 ? parts[0] : <>{parts}</>;
+}
+
 function renderTextWithLinks(text: string, participants: string[]) {
   const escapedNames = participants
     .slice()
@@ -47,7 +90,8 @@ function renderTextWithLinks(text: string, participants: string[]) {
         </span>
       );
     }
-    return part;
+    // Apply WhatsApp formatting to plain text segments
+    return <span key={i}>{renderFormattedSegment(part, `seg-${i}`)}</span>;
   });
 }
 
